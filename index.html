@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetingraum 1 Buchungssystem</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #F5F5F5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            background-color: #84BD22; /* Grüner Hintergrund */
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .date-header {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 Spalten */
+            gap: 10px;
+        }
+        .time-block {
+            border: 1px solid #299E8E; /* Blauer Rand */
+            border-radius: 5px;
+            padding: 20px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            background-color: #84BD22; /* Standard grün */
+            text-align: center;
+            height: 80px; /* Höhe der Blöcke erhöht */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em; /* Größere Schriftgröße */
+        }
+        .booked {
+            background-color: #fff; /* Gebuchte Zeit in Weiß */
+            color: #299E8E; /* Schriftfarbe Blau */
+        }
+        .intern {
+            background-color: #84BD22; /* Grün für interne Buchungen */
+        }
+        .extern {
+            background-color: #007BFF; /* Blau für externe Buchungen */
+        }
+        .feedback-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .feedback-section h2 {
+            margin-top: 0;
+        }
+        .feedback-input {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .submit-feedback {
+            padding: 10px 20px;
+            background-color: #84BD22; /* Grüner Button */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 50%;
+            max-width: 400px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .cancel-btn, .confirm-btn {
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .cancel-btn {
+            background-color: #ccc;
+        }
+        .confirm-btn {
+            background-color: #84BD22;
+            color: white;
+        }
+        /* Highlight for meetings starting in the next hour */
+        .highlight {
+            border: 2px solid yellow;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Meetingraum 1 Buchungssystem</h1>
+    </header>
+    <div class="container">
+        <div class="date-header" id="currentDate"></div>
+        <h2>Buchbare Zeiten</h2>
+        <div class="grid" id="timeSlots">
+            <!-- Zeitblöcke werden hier dynamisch hinzugefügt -->
+        </div>
+        
+        <!-- Raumdetails -->
+        <div class="feedback-section">
+            <h2>Raumdetails</h2>
+            <p>Maximale Teilnehmerzahl: 20</p>
+            <p>Technische Ausstattung: Beamer, Whiteboard, Video-Konferenzsystem</p>
+        </div>
+
+        <!-- Feedback Section -->
+        <div class="feedback-section">
+            <h2>Feedback einfügen</h2>
+            <form id="feedbackForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+                <textarea class="feedback-input" id="feedbackInput" name="feedback" placeholder="Ihr Feedback..." required></textarea>
+                <button type="submit" class="submit-feedback">Feedback absenden</button>
+                <div id="feedbackMessage" style="color: green;"></div>
+            </form>
+        </div>
+    </div>
+    <div class="footer">
+        <p>&copy; 2024 GREEN IT Das Systemhaus GmbH</p>
+    </div>
+
+    <!-- Buchungsbestätigung Modal -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <h3>Buchungsbestätigung</h3>
+            <p id="bookingDetails"></p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelBooking">Abbrechen</button>
+                <button class="confirm-btn" id="confirmBooking">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <h3>Buchungsdetails</h3>
+            <p id="detailsContent"></p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeDetailsModal">Schließen</button>
+                <button class="confirm-btn" id="cancelSlotBooking">Buchung stornieren</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Aktuelles Datum und Wochentag anzeigen
+        const currentDateElement = document.getElementById('currentDate');
+        const currentDate = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        currentDateElement.textContent = currentDate.toLocaleDateString('de-DE', options);
+
+        // Zeiten von 8 bis 17 Uhr erstellen
+        const timeSlots = [];
+        for (let hour = 8; hour <= 17; hour++) {
+            timeSlots.push(`${hour}:00`);
+            timeSlots.push(`${hour}:30`);
+        }
+
+        const bookedSlots = {}; // Gebuchte Slots
+
+        const timeSlotsContainer = document.getElementById('timeSlots');
+
+        let currentSlot = null; // Aktueller Slot für Buchungen
+        let bookingType = null; // Intern oder Extern
+
+        // Slot anklicken und Buchung starten
+        timeSlots.forEach(slot => {
+            const slotDiv = document.createElement('div');
+            slotDiv.className = 'time-block';
+            slotDiv.textContent = slot;
+
+            slotDiv.addEventListener('click', () => {
+                currentSlot = slot;
+                if (!bookedSlots[slot]) {
+                    showBookingConfirmation();
+                } else {
+                    showBookingDetails(slot);
+                }
+            });
+
+            timeSlotsContainer.appendChild(slotDiv);
+        });
+
+        // Buchungsbestätigung anzeigen
+        function showBookingConfirmation() {
+            const bookingModal = document.getElementById('bookingModal');
+            const bookingDetails = document.getElementById('bookingDetails');
+            bookingDetails.textContent = `Slot: ${currentSlot}`;
+            bookingModal.style.display = 'block';
+        }
+
+        // Details anzeigen, wenn auf einen gebuchten Slot geklickt wird
+        function showBookingDetails(slot) {
+            const detailsModal = document.getElementById('detailsModal');
+            const detailsContent = document.getElementById('detailsContent');
+            const booking = bookedSlots[slot];
+            detailsContent.textContent = `Buchung für ${booking.name} (${booking.department}), ${booking.participants} Teilnehmer, Typ: ${booking.type}`;
+            detailsModal.style.display = 'block';
+        }
+
+        // Buchungsbestätigung schließen
+        document.getElementById('cancelBooking').addEventListener('click', () => {
+            document.getElementById('bookingModal').style.display = 'none';
+        });
+
+        // Detailsmodal schließen
+        document.getElementById('closeDetailsModal').addEventListener('click', () => {
+            document.getElementById('detailsModal').style.display = 'none';
+        });
+
+        // Buchung bestätigen
+        document.getElementById('confirmBooking').addEventListener('click', () => {
+            const name = prompt('Bitte geben Sie Ihren Namen ein:');
+            const department = prompt('Bitte geben Sie Ihre Abteilung ein:');
+            const participants = prompt('Wie viele Personen nehmen teil?');
+            const type = confirm('Ist dies eine interne Buchung?') ? 'Intern' : 'Extern';
+
+            bookedSlots[currentSlot] = { name, department, participants, type };
+
+            const slotDiv = [...timeSlotsContainer.children].find(div => div.textContent === currentSlot);
+            slotDiv.classList.add(type === 'Intern' ? 'intern' : 'extern');
+            slotDiv.textContent = `${name} (${type})`;
+
+            document.getElementById('bookingModal').style.display = 'none';
+        });
+
+        // Buchung stornieren
+        document.getElementById('cancelSlotBooking').addEventListener('click', () => {
+            delete bookedSlots[currentSlot];
+
+            const slotDiv = [...timeSlotsContainer.children].find(div => div.textContent.startsWith(currentSlot));
+            slotDiv.className = 'time-block'; // Rücksetzen auf Standard
+            slotDiv.textContent = currentSlot;
+
+            document.getElementById('detailsModal').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
